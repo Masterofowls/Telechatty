@@ -1,56 +1,91 @@
-# Welcome to your Expo app 👋
+# Telechatty
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Telegram-inspired messaging app built with **Expo**, **React Native**, **TypeScript**, **Stream Chat**, and **Supabase**.
 
-## Get started
+Based on the [NotJustDev Telegram clone tutorial](https://www.youtube.com/) workflow: Supabase handles auth and profiles, Stream Chat powers real-time messaging with reactions, replies, media, and threads.
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- Email/password auth with Supabase
+- User profiles with avatar upload
+- Real-time chat list and 1:1 conversations via Stream Chat
+- Start new chats from a user directory
+- Telegram-inspired light/dark styling on Stream components
+- Expo Router file-based navigation
 
-2. Start the app
+## Prerequisites
 
-   ```bash
-   npx expo start
-   ```
+- Node.js 20+
+- [Stream Chat](https://getstream.io/) app (API key)
+- [Supabase](https://supabase.com/) project
+- **Development build** — `stream-chat-expo` does not run in Expo Go
 
-In the output, you'll find options to open the app in a
+## Setup
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. Install dependencies:
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Copy environment variables:
 
-### Other setup steps
+```bash
+cp .env.example .env
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+3. Fill in `.env`:
 
-## Learn more
+```env
+EXPO_PUBLIC_STREAM_API_KEY=...
+EXPO_PUBLIC_SUPABASE_URL=...
+EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+4. In Supabase SQL Editor, run `supabase/schema.sql`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+5. In Supabase Auth → Providers → Email, disable **Confirm email** for local development.
 
-## Join the community
+6. Make the `avatars` storage bucket public (the schema sets this on insert).
 
-Join our community of developers creating universal apps.
+## Run
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Create a native dev build (required for Stream Chat):
+
+```bash
+npx expo run:ios
+# or
+npx expo run:android
+```
+
+Start the dev server:
+
+```bash
+npx expo start --dev-client
+```
+
+## Project structure
+
+```
+src/
+  app/                 # Expo Router screens
+    auth/login.tsx     # Sign in / sign up
+    home/tabs/         # Chats + Profile tabs
+    home/channel/      # Active conversation
+    home/users.tsx     # Pick a user to message
+  components/          # Avatar, user list, loading
+  providers/           # Auth + Stream Chat providers
+  lib/                 # Supabase client, env helpers
+  constants/           # Telegram theme tokens
+supabase/schema.sql    # Profiles + avatar storage
+```
+
+## Notes
+
+- Dev tokens (`client.devToken`) are used for Stream auth during development. Use a backend token endpoint before production.
+- Web is not supported by `stream-chat-expo`; use iOS/Android dev builds.
+- Video calling from the tutorial can be added next with `@stream-io/video-react-native-sdk`.
+
+## License
+
+See [LICENSE](./LICENSE).
