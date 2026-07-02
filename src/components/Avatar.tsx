@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -11,6 +12,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 
 import { TelegramColors } from '@/constants/telegram-theme';
+import { updateMyProfile } from '@/lib/api/profiles';
 import { getAvatarPublicUrl, supabase } from '@/lib/supabase';
 
 type AvatarProps = {
@@ -54,10 +56,12 @@ export function Avatar({
       return;
     }
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission required', 'Allow photo library access to upload an avatar.');
-      return;
+    if (Platform.OS !== 'web') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission required', 'Allow photo library access to upload an avatar.');
+        return;
+      }
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -90,15 +94,7 @@ export function Avatar({
         throw uploadError;
       }
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: filePath, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-
-      if (profileError) {
-        throw profileError;
-      }
-
+      await updateMyProfile({ avatar_url: filePath });
       onUploaded?.(filePath);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Upload failed';

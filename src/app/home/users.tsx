@@ -1,41 +1,37 @@
 import { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useChatContext } from 'stream-chat-expo';
 
 import { UserListItem } from '@/components/UserListItem';
+import type { Profile } from '@/db/types';
+import { fetchProfileDirectory } from '@/lib/api/profiles';
+import { createDirectChannel } from '@/lib/api/stream';
 import { routes } from '@/lib/routes';
-import { supabase } from '@/lib/supabase';
+import { showMessage } from '@/lib/show-message';
 import { useAuth } from '@/providers/AuthProvider';
-import type { Profile } from '@/types/database';
 
 export default function UsersScreen() {
   const router = useRouter();
-  const { client } = useChatContext();
   const { user } = useAuth();
   const [users, setUsers] = useState<Profile[]>([]);
+  const [startingChatId, setStartingChatId] = useState<string | null>(null);
 
   useEffect(() => {
-    const userId = user?.id;
-    if (!userId) {
+    if (!user?.id) {
       return;
     }
 
     let cancelled = false;
 
     async function loadUsers() {
-      const { data, error } = await supabase.from('profiles').select('*').neq('id', userId);
-
-      if (cancelled) {
-        return;
+      try {
+        const profiles = await fetchProfileDirectory();
+        if (!cancelled) {
+          setUsers(profiles);
+        }
+      } catch (error) {
+        console.error('Failed to fetch users', error);
       }
-
-      if (error) {
-        console.error('Failed to fetch users', error.message);
-        return;
-      }
-
-      setUsers((data ?? []) as Profile[]);
     }
 
     void loadUsers();
@@ -46,16 +42,20 @@ export default function UsersScreen() {
   }, [user?.id]);
 
   async function startChat(target: Profile) {
-    if (!user?.id) {
+    if (!user?.id || startingChatId) {
       return;
     }
 
-    const channel = client.channel('messaging', {
-      members: [user.id, target.id],
-    });
-
-    await channel.watch();
-    router.replace(routes.channel(channel.cid));
+    setStartingChatId(target.id);
+    try {
+      const cid = await createDirectChannel(target.id);
+      router.replace(routes.channel(cid));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not start chat';
+      showMessage('Chat error', message);
+    } finally {
+      setStartingChatId(null);
+    }
   }
 
   return (
@@ -64,7 +64,11 @@ export default function UsersScreen() {
         data={users}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <UserListItem user={item} onPress={() => startChat(item)} />
+          <UserListItem
+            user={item}
+            onPress={() => startChat(item)}
+            disabled={startingChatId === item.id}
+          />
         )}
         ListEmptyComponent={null}
       />

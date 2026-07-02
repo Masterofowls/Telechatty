@@ -2,20 +2,27 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { TelegramColors } from '@/constants/telegram-theme';
-import type { Profile } from '@/types/database';
+import type { Profile } from '@/db/types';
 
 type UserListItemProps = {
   user: Profile;
   isDark?: boolean;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-export function UserListItem({ user, isDark = false, onPress }: UserListItemProps) {
+export function UserListItem({
+  user,
+  isDark = false,
+  onPress,
+  disabled = false,
+}: UserListItemProps) {
   const colors = isDark ? TelegramColors.dark : TelegramColors.light;
 
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.row,
         {

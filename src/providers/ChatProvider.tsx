@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View, useColorScheme } from 'react-native';
-import { Chat, OverlayProvider, useCreateChatClient } from 'stream-chat-expo';
-import { StreamChat } from 'stream-chat';
 import type { PropsWithChildren } from 'react';
 
 import { getTelegramStreamTheme } from '@/constants/telegram-theme';
 import { env, hasStreamConfig } from '@/lib/env';
+import { Chat, OverlayProvider, useCreateChatClient } from '@/lib/stream-chat';
 import { getAvatarPublicUrl } from '@/lib/supabase';
+import { useStreamTokenProvider } from '@/lib/use-stream-token-provider';
 import { useAuth } from '@/providers/AuthProvider';
-import type { Profile } from '@/types/database';
+import type { Profile } from '@/db/types';
 
 function ConnectedChatProvider({
   profile,
@@ -19,11 +19,11 @@ function ConnectedChatProvider({
   const theme = useMemo(() => getTelegramStreamTheme(isDark), [isDark]);
   const userName = profile.full_name ?? profile.username ?? 'User';
   const userImage = getAvatarPublicUrl(profile.avatar_url);
-  const devToken = StreamChat.getInstance(env.streamApiKey).devToken(profile.id);
+  const tokenProvider = useStreamTokenProvider();
 
   const chatClient = useCreateChatClient({
     apiKey: env.streamApiKey,
-    tokenOrProvider: devToken,
+    tokenOrProvider: tokenProvider,
     userData: {
       id: profile.id,
       name: userName,
@@ -47,9 +47,21 @@ function ConnectedChatProvider({
 }
 
 export function ChatProvider({ children }: PropsWithChildren) {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
 
-  if (!hasStreamConfig() || !profile) {
+  if (!hasStreamConfig()) {
+    return <>{children}</>;
+  }
+
+  if (session && !profile) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#3390EC" />
+      </View>
+    );
+  }
+
+  if (!profile) {
     return <>{children}</>;
   }
 

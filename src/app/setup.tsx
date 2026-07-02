@@ -2,10 +2,13 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SETUP_STEPS = [
-  'Create a Stream Chat app at getstream.io and copy the API key.',
-  'Create a Supabase project, run supabase/schema.sql, and make the avatars bucket public.',
-  'Copy .env.example to .env and fill in your keys.',
-  'Run npx expo run:ios or npx expo run:android (Stream Chat requires a dev build, not Expo Go).',
+  'Create a Stream Chat app at getstream.io and set EXPO_PUBLIC_STREAM_API_KEY + STREAM_API_SECRET.',
+  'Create a Supabase project and set EXPO_PUBLIC_SUPABASE_URL + ANON_KEY.',
+  'Add DATABASE_URL (Supabase Postgres pooler) to .env for Drizzle.',
+  'Run npm run db:migrate to apply drizzle/migrations.',
+  'Run npm run auth:disable-email (or disable Confirm email in Supabase Auth → Email).',
+  'Copy .env.example to .env and fill all values.',
+  'Web: npm run web — Native: npx expo run:ios or run:android.',
 ];
 
 export default function SetupScreen() {

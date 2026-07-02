@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { Channel as StreamChannel } from 'stream-chat';
+
 import {
   Channel,
   MessageComposer,
   MessageList,
   useChatContext,
-} from 'stream-chat-expo';
-import type { Channel as StreamChannel } from 'stream-chat';
+} from '@/lib/stream-chat';
 
 export default function ChannelScreen() {
   const { cid } = useLocalSearchParams<{ cid: string }>();

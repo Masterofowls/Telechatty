@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1751472000000,
+      "tag": "0000_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751472000001,
+      "tag": "0001_supabase_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751472000002,
+      "tag": "0002_username_contact_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1751472000003,
+      "tag": "0003_fix_auth_trigger_username",
+      "breakpoints": true
+    }
+  ]
+}

@@ -10,9 +10,10 @@ import {
 import type { Session, User } from '@supabase/supabase-js';
 
 import { LoadingScreen } from '@/components/LoadingScreen';
+import type { Profile } from '@/db/types';
+import { fetchMyProfile } from '@/lib/api/profiles';
 import { hasSupabaseConfig } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
-import type { Profile } from '@/types/database';
 
 type AuthContextValue = {
   session: Session | null;
@@ -25,15 +26,13 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-async function loadProfile(userId: string): Promise<Profile | null> {
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-
-  if (error) {
-    console.warn('Failed to fetch profile', error.message);
+async function loadProfile(): Promise<Profile | null> {
+  try {
+    return await fetchMyProfile();
+  } catch (error) {
+    console.warn('Failed to fetch profile', error);
     return null;
   }
-
-  return data as Profile;
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -56,13 +55,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setSession(data.session);
 
       if (data.session?.user) {
-        setProfile(await loadProfile(data.session.user.id));
+        setProfile(await loadProfile());
       }
 
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       setSession(nextSession);
 
       if (!nextSession?.user) {
@@ -70,11 +69,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      void loadProfile(nextSession.user.id).then((nextProfile) => {
-        if (mounted) {
-          setProfile(nextProfile);
-        }
-      });
+      const nextProfile = await loadProfile();
+      if (mounted) {
+        setProfile(nextProfile);
+      }
     });
 
     return () => {
@@ -84,13 +82,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    const userId = session?.user?.id;
-    if (!userId) {
-      return;
-    }
-
-    setProfile(await loadProfile(userId));
-  }, [session]);
+    setProfile(await loadProfile());
+  }, []);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();

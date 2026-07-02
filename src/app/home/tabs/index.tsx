@@ -2,12 +2,12 @@ import { useMemo } from 'react';
 import { Pressable, StyleSheet, useColorScheme } from 'react-native';
 import { Link, Stack, useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { ChannelList } from 'stream-chat-expo';
 import type { Channel as StreamChannel } from 'stream-chat';
 
 import { TelegramColors } from '@/constants/telegram-theme';
 import { hasStreamConfig } from '@/lib/env';
 import { routes } from '@/lib/routes';
+import { ChannelList } from '@/lib/stream-chat';
 import { useAuth } from '@/providers/AuthProvider';
 
 export default function ChatsScreen() {

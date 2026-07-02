@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/Avatar';
 import { TelegramColors } from '@/constants/telegram-theme';
-import { supabase } from '@/lib/supabase';
+import { updateMyProfile } from '@/lib/api/profiles';
 import { useAuth } from '@/providers/AuthProvider';
 
 export default function ProfileScreen() {
@@ -32,18 +32,7 @@ export default function ProfileScreen() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: fullName.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
+      await updateMyProfile({ full_name: fullName.trim() });
       await refreshProfile();
       Alert.alert('Profile updated', 'Your display name was saved.');
     } catch (error) {
@@ -78,8 +67,17 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.fieldGroup}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Username</Text>
+          <Text style={[styles.value, { color: colors.text }]}>
+            @{profile?.username ?? 'not set'}
+          </Text>
+        </View>
+
+        <View style={styles.fieldGroup}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
-          <Text style={[styles.value, { color: colors.text }]}>{user?.email}</Text>
+          <Text style={[styles.value, { color: colors.text }]}>
+            {profile?.contact_email ?? 'Not added'}
+          </Text>
         </View>
 
         <View style={styles.fieldGroup}>

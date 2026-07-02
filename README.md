@@ -1,90 +1,131 @@
 # Telechatty
 
-Telegram-inspired messaging app built with **Expo**, **React Native**, **TypeScript**, **Stream Chat**, and **Supabase**.
+Telegram-inspired messaging app built with **Expo**, **React Native**, **TypeScript**, **Stream Chat**, **Supabase Auth**, and **Drizzle ORM**.
 
-Based on the [NotJustDev Telegram clone tutorial](https://www.youtube.com/) workflow: Supabase handles auth and profiles, Stream Chat powers real-time messaging with reactions, replies, media, and threads.
+Runs on **iOS**, **Android**, and **Web**.
+
+## Architecture
+
+| Layer | Technology |
+|-------|------------|
+| UI / navigation | Expo Router |
+| Auth | Supabase Auth (client) |
+| Data | Drizzle ORM → Supabase Postgres (server API routes) |
+| Chat | `stream-chat-expo` (native) / `stream-chat-react` (web) |
+| Storage | Supabase Storage (avatars) |
+
+```
+Client (Expo) ──► /api/profiles ──► Drizzle repositories ──► Postgres
+              └──► Supabase Auth / Storage
+              └──► Stream Chat
+```
 
 ## Features
 
-- Email/password auth with Supabase
-- User profiles with avatar upload
-- Real-time chat list and 1:1 conversations via Stream Chat
-- Start new chats from a user directory
-- Telegram-inspired light/dark styling on Stream components
-- Expo Router file-based navigation
-
-## Prerequisites
-
-- Node.js 20+
-- [Stream Chat](https://getstream.io/) app (API key)
-- [Supabase](https://supabase.com/) project
-- **Development build** — `stream-chat-expo` does not run in Expo Go
+- Email/password auth
+- Type-safe profiles via Drizzle schema + repositories
+- Real-time 1:1 chat (Stream)
+- Avatar upload, user directory, Telegram-inspired theme
+- Web support with `stream-chat-react`
 
 ## Setup
 
-1. Install dependencies:
+### 1. Install
 
 ```bash
 npm install
 ```
 
-2. Copy environment variables:
+### 2. Environment
 
 ```bash
 cp .env.example .env
 ```
 
-3. Fill in `.env`:
+Fill in Stream + Supabase keys, `STREAM_API_SECRET` (server), and `DATABASE_URL` (Supabase → Settings → Database → Connection string, use **Transaction** pooler port `6543`).
 
-```env
-EXPO_PUBLIC_STREAM_API_KEY=...
-EXPO_PUBLIC_SUPABASE_URL=...
-EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+### 3. Database (Drizzle)
+
+```bash
+npm run db:migrate
 ```
 
-4. In Supabase SQL Editor, run `supabase/schema.sql`.
+This applies SQL from `drizzle/migrations/`. Schema is defined in `src/db/schema/`.
 
-5. In Supabase Auth → Providers → Email, disable **Confirm email** for local development.
+### 4. Supabase Auth (no email confirmation)
 
-6. Make the `avatars` storage bucket public (the schema sets this on insert).
+Telechatty uses **username + password**; email is optional. Disable Supabase email confirmation so signup works instantly:
 
-## Run
+**Option A — script (recommended)**
 
-Create a native dev build (required for Stream Chat):
+```bash
+# Add SUPABASE_ACCESS_TOKEN to .env (https://supabase.com/dashboard/account/tokens)
+npm run auth:disable-email
+```
+
+**Option B — dashboard**
+
+Supabase → **Authentication** → **Providers** → **Email** → turn **off** **Confirm email**
+
+### 5. Run
+
+**Web** (API routes + Drizzle work out of the box):
+
+```bash
+npm run web
+```
+
+**iOS / Android** (requires dev build for Stream native SDK):
 
 ```bash
 npx expo run:ios
 # or
 npx expo run:android
+npm start
 ```
 
-Start the dev server:
+Set `EXPO_PUBLIC_API_URL` to your machine IP when testing on a physical device (e.g. `http://192.168.1.10:8081`).
+
+## Drizzle workflow
+
+Drizzle Kit is installed as a dev dependency. Set `DATABASE_URL` in `.env`, then:
 
 ```bash
-npx expo start --dev-client
+npm run db:generate      # create migration SQL from src/db/schema
+npm run db:migrate       # apply migrations to Postgres
+npm run db:studio        # open Drizzle Studio at http://127.0.0.1:4983
+npm run db:push          # push schema directly (dev only)
+npm run db:check         # validate migrations vs schema
 ```
+
+Full CLI reference: `npm run db -- --help` or see [drizzle/README.md](./drizzle/README.md).
+
+Repositories live in `src/db/repositories/`. The app never writes raw SQL — only Drizzle queries.
 
 ## Project structure
 
 ```
 src/
-  app/                 # Expo Router screens
-    auth/login.tsx     # Sign in / sign up
-    home/tabs/         # Chats + Profile tabs
-    home/channel/      # Active conversation
-    home/users.tsx     # Pick a user to message
-  components/          # Avatar, user list, loading
-  providers/           # Auth + Stream Chat providers
-  lib/                 # Supabase client, env helpers
-  constants/           # Telegram theme tokens
-supabase/schema.sql    # Profiles + avatar storage
+  db/
+    schema/           # Drizzle table definitions
+    repositories/     # Typed query layer
+    auth/             # API request verification
+  app/
+    api/              # Expo API routes (Drizzle server)
+    auth/             # Login
+    home/             # Chats, channel, profile, users
+  lib/
+    api/              # Client fetch wrappers
+    stream-chat.*     # Platform-specific Stream SDK
+    supabase.*        # Platform-specific Supabase client
+drizzle/migrations/   # SQL migrations
 ```
 
 ## Notes
 
-- Dev tokens (`client.devToken`) are used for Stream auth during development. Use a backend token endpoint before production.
-- Web is not supported by `stream-chat-expo`; use iOS/Android dev builds.
-- Video calling from the tutorial can be added next with `@stream-io/video-react-native-sdk`.
+- Stream tokens are issued by `/api/stream-token` using `STREAM_API_SECRET` (dev tokens are disabled on most Stream apps).
+- `DATABASE_URL` is server-only; never expose it in client code.
+- Video calling can be added with `@stream-io/video-react-native-sdk`.
 
 ## License
 

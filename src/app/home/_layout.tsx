@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { routes } from '@/lib/routes';
 import { ChatProvider } from '@/providers/ChatProvider';
 import { useAuth } from '@/providers/AuthProvider';
@@ -12,8 +13,9 @@ export default function HomeLayout() {
   }
 
   return (
-    <ChatProvider>
-      <Stack>
+    <ErrorBoundary title="Chat failed to load">
+      <ChatProvider>
+        <Stack>
         <Stack.Screen name="tabs" options={{ headerShown: false }} />
         <Stack.Screen
           name="channel/[cid]"
@@ -30,6 +32,7 @@ export default function HomeLayout() {
           }}
         />
       </Stack>
-    </ChatProvider>
+      </ChatProvider>
+    </ErrorBoundary>
   );
 }
